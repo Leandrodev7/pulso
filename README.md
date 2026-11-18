@@ -1,52 +1,34 @@
-# MarketPulse
+# Pulso — O Mercado em Movimento
 
-Painel web para acompanhar cotações do dólar, euro e Bitcoin em reais. A interface reúne valores atuais, histórico gráfico e conversão entre BRL, USD, EUR e BTC.
+Painel web para acompanhar cotações do dólar, euro e Bitcoin em reais. A interface reúne valores atuais em tempo real, histórico gráfico vetorial e conversão de moedas executada diretamente no navegador.
 
 ## Recursos
 
-- Cotações atualizadas pela AwesomeAPI, com atualização manual e automática.
-- Histórico de 7, 30 ou 90 dias em gráfico interativo.
-- Horário da última consulta e sinalização de cotações antigas no conversor.
-- Tabela acessível com os valores usados no gráfico.
-- Conversor de moedas com indicação quando uma cotação está desatualizada.
-- Layout responsivo, navegação por teclado e suporte a preferência por movimento reduzido.
+- **Cotações em tempo real:** dados oficiais da AwesomeAPI para USD, EUR e BTC com atualização automática a cada 60s ou sob demanda.
+- **Identidade e tema escuro:** paleta em azul-marinho profundo (`#0b1329`, `#14213d`) com acentos em laranja vibrante (`#f28c28`) e tipografia com números tabulares.
+- **Relógio de Brasília:** fuso horário oficial (`America/Sao_Paulo`), desacoplado do relógio local do dispositivo e sem presunções de feriados.
+- **Gráfico vetorial nativo (SVG):** histórico interativo de 7, 30 ou 90 dias com curvas suaves (Bézier), mira, tooltip de variação e métricas estatísticas (mínima, máxima, média).
+- **Tratamento de falhas resiliente:** limpeza automática de dados defasados caso a consulta falhe, exibindo estado claro de erro e botão de nova tentativa.
+- **Tabela acessível:** visualização tabular completa dos fechamentos diários para leitores de tela e auditoria de dados (WCAG 2.1 AA).
+- **Conversor de moedas:** conversão client-side com atalhos rápidos (100, 500, 1.000, 5.000), paridades direta/inversa e sinalização de cotação desatualizada.
+- **Acessibilidade total:** botões interativos com `aria-pressed`, outline visível para navegação por teclado e semântica estrita.
 
-## Tecnologias e execução
+## Tecnologias e Execução
 
-- HTML, CSS e JavaScript sem framework ou etapa de compilação.
-- Chart.js 4.4.1, carregado de uma URL versionada do cdnjs e verificado por SRI.
-- AwesomeAPI para dados de cotação.
+- **HTML5, CSS3 nativo e Vanilla JavaScript (ES6+):** sem frameworks, sem etapa de build ou dependências externas pesadas.
+- **Segurança e CSP:** política rígida de Content Security Policy (CSP) configurada via `_headers` e `<meta>`, sem scripts inline (`onsubmit`, `onclick`), sem estilos embutidos e sem CDNs não autorizadas.
+- **AwesomeAPI:** dados de cotações de câmbio públicos.
 
-Para executar localmente, abra `index.html` em um navegador ou sirva a pasta por um servidor estático local. A consulta à API depende de conexão com a internet e pode não funcionar ao abrir o arquivo diretamente, conforme as regras de origem do navegador.
+Para executar localmente, sirva o diretório através de um servidor local (por exemplo, `npx serve`, Python `python -m http.server` ou extensão Live Server do VS Code) ou abra `index.html`.
 
-## Privacidade e segurança
+## Privacidade e Governança
 
-O projeto não possui backend, contas, formulários de cadastro, ferramentas de análise ou publicidade. O código do site não grava cookies nem armazena valores do conversor; esses valores são processados no navegador e não são enviados à API. As consultas externas contêm apenas os pares de moedas solicitados. A hospedagem, AwesomeAPI e cdnjs ainda podem receber dados técnicos da conexão, como IP e navegador, segundo suas próprias políticas.
-
-Há uma política CSP no HTML que limita scripts, estilos, fontes e conexões às origens necessárias; a biblioteca Chart.js também usa Subresource Integrity (SRI). O código da aplicação não insere respostas da API como HTML. A página depende da disponibilidade e das práticas de privacidade da AwesomeAPI, cdnjs e hospedagem; não há como garantir disponibilidade contínua, ausência absoluta de falhas ou cotação em tempo real. Leia também [privacidade.html](./privacidade.html).
-
-**Antes da publicação:** identificar na política a pessoa ou organização que decide a operação do site e incluir um canal de contato para solicitações de privacidade. Até essas informações serem fornecidas, `privacidade.html` é uma minuta, não uma declaração de conformidade com a LGPD. A adequação depende também da operação real e dos fornecedores escolhidos; este projeto não constitui parecer jurídico.
+O Pulso não possui backend proprietário, cadastro de contas, banco de dados ou ferramentas de rastreamento. As conversões são processadas exclusivamente na memória do navegador do usuário. Veja mais detalhes em [privacidade.html](./privacidade.html).
 
 ### Publicação no Cloudflare Pages
 
-O arquivo `_headers` configura cabeçalhos HTTP de CSP, proteção contra MIME incorreto, política de referência e permissões do navegador. A CSP enviada pelo Cloudflare também impede que a página seja incorporada em frames. O HTML mantém uma política CSP de reserva para execução fora do Cloudflare.
+O arquivo `_headers` define cabeçalhos HTTP para CSP, `nosniff`, `Referrer-Policy: no-referrer` e restrições de permissões (`Permissions-Policy`). Ao publicar no Cloudflare Pages, mantenha o diretório raiz como pasta de publicação sem comando de build.
 
-No Cloudflare Pages, crie um projeto conectado ao repositório Git ou faça upload dos arquivos do site. Para este site estático, não é necessário comando de build: use a raiz do projeto como diretório de saída e deixe o comando de build vazio. Confirme que `_headers` foi publicado com `index.html`, `style.css` e `script.js`.
+## Aviso Legal
 
-Depois da publicação, teste a URL `pages.dev` ou o domínio personalizado e confirme que os cabeçalhos de segurança aparecem na resposta HTTP.
-
-### Google Search Console
-
-Após obter a URL pública no Cloudflare Pages, adicione-a ao [Google Search Console](https://search.google.com/search-console/) como uma propriedade de prefixo de URL. Conclua a verificação de propriedade seguindo o método sugerido pelo Google e solicite a indexação da página inicial. A inclusão nos resultados não é imediata nem garantida pelo Google. Este projeto não inclui um sitemap porque ainda não há um domínio público definido.
-
-Não há credenciais ou projeto Cloudflare configurados neste repositório. Nenhuma configuração torna um site “à prova de problemas”; mantenha dependências e instruções de implantação revisadas.
-
-## Dados financeiros
-
-Os valores são informativos, podem ter atraso ou diferir dos praticados por instituições financeiras devido a IOF, spread e tarifas. Não constituem recomendação de investimento.
-
-## Créditos
-
-- API de cotações: [AwesomeAPI](https://docs.awesomeapi.com.br/)
-- Gráficos: [Chart.js](https://www.chartjs.org/)
-- Desenvolvido por Leandro Dev7 como projeto de estudo e portfólio.
+Os valores exibidos são puramente informativos e podem apresentar variações ou atrasos de cache da API. Não constituem recomendação de investimento ou compra/venda de ativos.

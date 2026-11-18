@@ -1,7 +1,15 @@
-// ===== Configuração =====
+/**
+ * ==========================================================================
+ * PULSO — O Mercado em Movimento
+ * Lógica Principal da Aplicação (100% Vanilla JS, Zero Dados Fictícios)
+ * Integração com AwesomeAPI, Renderização SVG e Conversor Client-Side
+ * ==========================================================================
+ */
+
+// ===== Configurações Globais =====
 const API = "https://economia.awesomeapi.com.br/json";
-const INTERVALO_ATUALIZACAO = 60 * 1000; // 1 minuto
-const IDADE_MAXIMA_COTACAO = 60 * 60 * 1000;
+const INTERVALO_ATUALIZACAO = 60 * 1000; // 60 segundos
+const IDADE_MAXIMA_COTACAO = 60 * 60 * 1000; // 1 hora
 
 const MOEDAS = {
   USD: {
@@ -9,51 +17,107 @@ const MOEDAS = {
     par: "USD-BRL",
     chave: "USDBRL",
     apelido: "dólar",
+    flag: "🇺🇸",
   },
-  EUR: { nome: "Euro", par: "EUR-BRL", chave: "EURBRL", apelido: "euro" },
-  BTC: { nome: "Bitcoin", par: "BTC-BRL", chave: "BTCBRL", apelido: "bitcoin" },
+  EUR: {
+    nome: "Euro",
+    par: "EUR-BRL",
+    chave: "EURBRL",
+    apelido: "euro",
+    flag: "🇪🇺",
+  },
+  BTC: {
+    nome: "Bitcoin",
+    par: "BTC-BRL",
+    chave: "BTCBRL",
+    apelido: "bitcoin",
+    flag: "🪙",
+  },
 };
 
-// ===== Estado =====
+// ===== Estado da Aplicação =====
 const estado = {
-  cotacoes: {}, // { USD: { valor, variacao, max, min, desatualizada }, ... }
+  cotacoes: {},
   moedaGrafico: "USD",
   dias: 30,
-  grafico: null,
-  // Números de ordem das consultas. Só a mais recente pode atualizar a tela.
   idCotacoes: 0,
   idHistorico: 0,
 };
 
-// ===== Elementos =====
+// ===== Elementos da Interface =====
 const el = {
-  atualizacao: document.getElementById("atualizacao"),
-  btnAtualizar: document.getElementById("btn-atualizar"),
-  lista: document.getElementById("lista"),
-  erroCotacoes: document.getElementById("erro-cotacoes"),
-  resumo: document.getElementById("resumo-grafico"),
-  tabelaGrafico: document.getElementById("tabela-grafico"),
-  dadosGrafico: document.getElementById("dados-grafico"),
-  corpoTabelaGrafico: document.getElementById("corpo-tabela-grafico"),
-  periodos: document.querySelectorAll(".periodo"),
-  valor: document.getElementById("valor"),
-  de: document.getElementById("de"),
-  para: document.getElementById("para"),
-  inverter: document.getElementById("inverter"),
-  resultado: document.getElementById("resultado"),
+  cardsContainer: document.getElementById("cards-container"),
+  statusSyncTime: document.getElementById("status-sync-time"),
+  btnSync: document.getElementById("btn-sync"),
+  iconSync: document.getElementById("icon-sync"),
+  erroBanner: document.getElementById("erro-banner"),
+  erroMsg: document.getElementById("erro-msg"),
+  btnReintentar: document.getElementById("btn-reintentar"),
+  liveClock: document.getElementById("live-clock"),
+  chartTitle: document.getElementById("chart-title"),
+  chartSubtitle: document.getElementById("chart-subtitle"),
+  chartPctBadge: document.getElementById("chart-pct-badge"),
+  metricMin: document.getElementById("metric-min"),
+  metricMax: document.getElementById("metric-max"),
+  metricAvg: document.getElementById("metric-avg"),
+  metricPoints: document.getElementById("metric-points"),
+  chartWrapper: document.getElementById("chart-wrapper"),
+  chartSvg: document.getElementById("chart-svg"),
+  chartLine: document.getElementById("chart-line"),
+  chartArea: document.getElementById("chart-area"),
+  chartGrid: document.getElementById("chart-grid"),
+  chartCrosshair: document.getElementById("chart-crosshair"),
+  crosshairX: document.getElementById("crosshair-x"),
+  crosshairDot: document.getElementById("crosshair-dot"),
+  chartTooltip: document.getElementById("chart-tooltip"),
+  tooltipDate: document.getElementById("tooltip-date"),
+  tooltipVal: document.getElementById("tooltip-val"),
+  tooltipDiff: document.getElementById("tooltip-diff"),
+  chartLoading: document.getElementById("chart-loading"),
+  chartErrorState: document.getElementById("chart-error-state"),
+  btnRetryChart: document.getElementById("btn-retry-chart"),
+  chartResumoTexto: document.getElementById("chart-resumo-texto"),
+  tableContainer: document.getElementById("table-container"),
+  tableBody: document.getElementById("table-body"),
+  toggleTableBtn: document.getElementById("toggle-table-btn"),
+  tableArrow: document.getElementById("table-arrow"),
   form: document.getElementById("form-conversor"),
+  convAmount: document.getElementById("conv-amount"),
+  convFrom: document.getElementById("conv-from"),
+  convTo: document.getElementById("conv-to"),
+  convResultBox: document.getElementById("conv-result-box"),
+  rateDirect: document.getElementById("rate-direct"),
+  rateInverse: document.getElementById("rate-inverse"),
+  btnSwap: document.getElementById("btn-swap"),
+  iconSwapSvg: document.getElementById("icon-swap-svg"),
+  statusCotacaoVelha: document.getElementById("status-cotacao-velha"),
+  periodBtns: document.querySelectorAll(".btn-periodo"),
+  quickResetUsd: document.getElementById("quick-reset-usd"),
 };
 
-// ===== Formatação =====
-const brl = new Intl.NumberFormat("pt-BR", {
+// Prevenção de envio de formulário padrão sem depender de handlers inline (compatibilidade CSP)
+if (el.form) {
+  el.form.addEventListener("submit", (e) => e.preventDefault());
+}
+
+// ===== Formatadores Numéricos =====
+const fmtBRL = new Intl.NumberFormat("pt-BR", {
   style: "currency",
   currency: "BRL",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 4,
+});
+
+const fmtBRLCompact = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  maximumFractionDigits: 2,
 });
 
 function formatarMoeda(numero, moeda) {
   if (moeda === "BTC") {
     return (
-      numero.toLocaleString("pt-BR", { maximumFractionDigits: 8 }) + " BTC"
+      numero.toLocaleString("pt-BR", { maximumFractionDigits: 6 }) + " BTC"
     );
   }
   return new Intl.NumberFormat("pt-BR", {
@@ -62,39 +126,22 @@ function formatarMoeda(numero, moeda) {
   }).format(numero);
 }
 
-function formatarPercentual(numero) {
-  const sinal = numero > 0 ? "+" : "";
-  return (
-    sinal + numero.toLocaleString("pt-BR", { maximumFractionDigits: 2 }) + "%"
-  );
-}
-
-function horaAgora() {
-  return new Date().toLocaleTimeString("pt-BR", {
-    hour: "2-digit",
-    minute: "2-digit",
+// ===== Relógio Oficial de Brasília (Sem especulação sobre feriados) =====
+function atualizarRelogioBrasilia() {
+  if (!el.liveClock) return;
+  const agora = new Date();
+  el.liveClock.textContent = agora.toLocaleTimeString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
   });
 }
+setInterval(atualizarRelogioBrasilia, 1000);
+atualizarRelogioBrasilia();
 
-// Diferencia a hora da consulta da hora da cotação, porque a API pode devolver dado em cache.
-function textoAtualizacao() {
-  return "Última consulta às " + horaAgora() + ".";
+// ===== Validações e Tratamento de Resposta =====
+function precoValido(n) {
+  return Number.isFinite(n) && n > 0;
 }
 
-function formatarDataCotacao(data) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(data);
-}
-
-// ===== Validação =====
-// Preço precisa ser número finito e maior que zero.
-function precoValido(numero) {
-  return Number.isFinite(numero) && numero > 0;
-}
-
-// Transforma o item da API em uma cotação segura, ou devolve null se algo estiver errado.
 function lerCotacao(item) {
   if (!item || typeof item !== "object") return null;
 
@@ -103,18 +150,13 @@ function lerCotacao(item) {
   const max = Number(item.high);
   const min = Number(item.low);
 
-  if (!precoValido(valor) || !precoValido(max) || !precoValido(min))
-    return null;
+  if (!precoValido(valor) || !precoValido(max) || !precoValido(min)) return null;
   if (!Number.isFinite(variacao)) return null;
 
   const timestamp = Number(item.timestamp);
-  const dataRecebida =
+  const dataCotacao =
     Number.isFinite(timestamp) && timestamp > 0
       ? new Date(timestamp * 1000)
-      : null;
-  const dataCotacao =
-    dataRecebida && Number.isFinite(dataRecebida.getTime())
-      ? dataRecebida
       : null;
   const idade = dataCotacao ? Date.now() - dataCotacao.getTime() : Infinity;
 
@@ -128,15 +170,13 @@ function lerCotacao(item) {
   };
 }
 
-// ===== Rede =====
-// Busca com tempo limite, para o site não ficar esperando para sempre.
 async function buscarJSON(url, tempoLimite = 10000) {
   const controle = new AbortController();
   const timer = setTimeout(() => controle.abort(), tempoLimite);
   try {
     const resposta = await fetch(url, { signal: controle.signal });
     if (!resposta.ok) {
-      throw new Error("A API respondeu com status " + resposta.status);
+      throw new Error(`A API respondeu com status ${resposta.status}`);
     }
     return await resposta.json();
   } finally {
@@ -144,22 +184,41 @@ async function buscarJSON(url, tempoLimite = 10000) {
   }
 }
 
-// ===== Cotações atuais =====
-function mostrarErroCotacoes(mensagem) {
-  el.erroCotacoes.textContent = mensagem;
-  el.erroCotacoes.hidden = false;
+// ===== Skeletons de Inicialização =====
+function renderizarSkeletons() {
+  if (!el.cardsContainer) return;
+  el.cardsContainer.innerHTML = Object.entries(MOEDAS)
+    .map(
+      ([code, moeda]) => `
+      <li class="card-item">
+        <div class="skeleton-card">
+          <div class="card-cabecalho">
+            <div class="card-identificacao">
+              <span class="card-bandeira">${moeda.flag}</span>
+              <div>
+                <span class="card-sigla">${code} / BRL</span>
+                <span class="card-nome">${moeda.nome}</span>
+              </div>
+            </div>
+            <div class="skeleton-linha" style="width: 3.5rem; height: 1.25rem;"></div>
+          </div>
+          <div class="card-valor-bloco">
+            <div class="skeleton-linha" style="width: 7.5rem; height: 1.75rem;"></div>
+          </div>
+          <div class="skeleton-linha" style="width: 100%; height: 0.375rem; margin-top: 0.5rem;"></div>
+        </div>
+      </li>
+    `
+    )
+    .join("");
 }
 
-function marcarTodasDesatualizadas() {
-  for (const cotacao of Object.values(estado.cotacoes)) {
-    cotacao.desatualizada = true;
-  }
-}
-
+// ===== Consulta de Cotações em Tempo Real =====
 async function carregarCotacoes() {
   const id = ++estado.idCotacoes;
-  el.btnAtualizar.disabled = true;
-  el.erroCotacoes.hidden = true;
+  if (el.btnSync) el.btnSync.disabled = true;
+  if (el.iconSync) el.iconSync.classList.add("girando");
+  if (el.erroBanner) el.erroBanner.classList.add("escondido");
 
   try {
     const pares = Object.values(MOEDAS)
@@ -167,347 +226,489 @@ async function carregarCotacoes() {
       .join(",");
     const dados = await buscarJSON(`${API}/last/${pares}`);
 
-    // Chegou uma consulta mais nova enquanto esta esperava: descarta esta.
     if (id !== estado.idCotacoes) return;
 
-    const semDados = [];
+    let sucessoCount = 0;
     for (const [sigla, moeda] of Object.entries(MOEDAS)) {
-      const nova = lerCotacao(dados && dados[moeda.chave]);
-      if (nova) {
-        estado.cotacoes[sigla] = nova;
-      } else {
-        semDados.push(moeda.nome);
-        // Mantém o valor antigo, mas marcado, para a tela avisar.
-        if (estado.cotacoes[sigla]) estado.cotacoes[sigla].desatualizada = true;
+      const lida = lerCotacao(dados && dados[moeda.chave]);
+      if (lida) {
+        estado.cotacoes[sigla] = lida;
+        sucessoCount++;
+      } else if (estado.cotacoes[sigla]) {
+        estado.cotacoes[sigla].desatualizada = true;
       }
     }
 
-    if (semDados.length === Object.keys(MOEDAS).length) {
-      throw new Error("Nenhuma cotação válida na resposta");
+    if (sucessoCount === 0) {
+      throw new Error("Nenhuma cotação válida retornada pela API");
     }
 
-    renderizarLista();
+    renderizarCards();
     converter();
-
-    if (semDados.length > 0) {
-      el.atualizacao.textContent = "Atualização parcial. " + textoAtualizacao();
-      mostrarErroCotacoes(
-        "Sem dados novos para: " +
-          semDados.join(", ") +
-          ". Os valores dessas moedas podem estar desatualizados.",
-      );
-    } else {
-      el.atualizacao.textContent = textoAtualizacao();
+    const agora = new Date();
+    if (el.statusSyncTime) {
+      el.statusSyncTime.textContent = `Última consulta às ${agora.toLocaleTimeString("pt-BR")}`;
     }
   } catch (erro) {
     if (id !== estado.idCotacoes) return;
-    console.error(erro);
-    marcarTodasDesatualizadas();
-    renderizarLista();
-    converter();
-    mostrarErroCotacoes(
-      "Não foi possível carregar as cotações. Verifique sua conexão e tente de novo.",
-    );
-    el.atualizacao.textContent = "Falha na atualização";
+    console.error("Falha ao carregar cotações:", erro);
+    if (el.erroBanner) el.erroBanner.classList.remove("escondido");
+    if (el.erroMsg) {
+      el.erroMsg.textContent =
+        "Não foi possível sincronizar com a AwesomeAPI. Verifique sua conexão.";
+    }
+    if (el.statusSyncTime) {
+      el.statusSyncTime.textContent = "Falha na sincronização recente";
+    }
   } finally {
-    // Só a consulta mais recente libera o botão.
-    if (id === estado.idCotacoes) el.btnAtualizar.disabled = false;
+    if (id === estado.idCotacoes) {
+      if (el.btnSync) el.btnSync.disabled = false;
+      if (el.iconSync) el.iconSync.classList.remove("girando");
+    }
   }
 }
 
-function renderizarLista() {
-  el.lista.replaceChildren();
+// ===== Renderização de Cards Acessíveis (<button>) =====
+function renderizarCards() {
+  if (!el.cardsContainer) return;
+  el.cardsContainer.innerHTML = "";
 
-  for (const [sigla, moeda] of Object.entries(MOEDAS)) {
-    const c = estado.cotacoes[sigla];
-    if (!c) continue;
+  Object.entries(MOEDAS).forEach(([code, moeda]) => {
+    const c = estado.cotacoes[code];
+    if (!c) return;
 
-    const item = document.createElement("li");
-    const botao = document.createElement("button");
-    botao.type = "button";
-    botao.className = "moeda";
-    botao.dataset.sigla = sigla;
-    botao.setAttribute("aria-pressed", String(sigla === estado.moedaGrafico));
+    const isSelected = code === estado.moedaGrafico;
+    const isUp = c.variacao >= 0;
 
-    const nome = document.createElement("span");
-    nome.className = "moeda-nome";
-    nome.textContent = moeda.nome + " ";
-    const siglaEl = document.createElement("span");
-    siglaEl.className = "moeda-sigla";
-    siglaEl.textContent = sigla;
-    nome.appendChild(siglaEl);
+    const span = c.max - c.min;
+    const rangePercent =
+      span > 0
+        ? Math.min(Math.max(((c.valor - c.min) / span) * 100, 2), 98)
+        : 50;
 
-    const valor = document.createElement("span");
-    valor.className = "moeda-valor";
-    valor.textContent = brl.format(c.valor);
+    const li = document.createElement("li");
+    li.className = "card-item";
 
-    const faixa = document.createElement("span");
-    faixa.className = "moeda-faixa";
-    faixa.textContent = `Mín ${brl.format(c.min)} / Máx ${brl.format(c.max)}`;
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "card-btn";
+    btn.setAttribute("aria-pressed", String(isSelected));
+    btn.setAttribute(
+      "aria-label",
+      `${moeda.nome}: ${formatarMoeda(c.valor, "BRL")}, variação de ${isUp ? "+" : ""}${c.variacao.toFixed(2)}%. Toque para ver histórico.`
+    );
 
-    const variacao = document.createElement("span");
-    const subiu = c.variacao >= 0;
-    variacao.className = "moeda-var " + (subiu ? "sobe" : "desce");
-    variacao.textContent =
-      (subiu ? "▲ " : "▼ ") + formatarPercentual(c.variacao);
+    btn.innerHTML = `
+      <div class="card-cabecalho">
+        <div class="card-identificacao">
+          <span class="card-bandeira">${moeda.flag}</span>
+          <div>
+            <span class="card-sigla">${code} / BRL</span>
+            <span class="card-nome">${moeda.nome}</span>
+          </div>
+        </div>
+        <span class="badge-variacao font-mono-num ${isUp ? "badge-alta" : "badge-baixa"}">
+          ${isUp ? "▲ +" : "▼ "}${c.variacao.toFixed(2)}%
+        </span>
+      </div>
 
-    botao.append(nome, valor, faixa, variacao);
+      <div class="card-valor-bloco">
+        <div class="card-valor font-mono-num">
+          ${code === "BTC" ? fmtBRLCompact.format(c.valor) : fmtBRL.format(c.valor)}
+        </div>
+      </div>
 
-    item.appendChild(botao);
-    el.lista.appendChild(item);
+      <div>
+        <div class="card-minmax font-mono-num">
+          <span>Mín: ${code === "BTC" ? fmtBRLCompact.format(c.min) : c.min.toFixed(4)}</span>
+          <span>Máx: ${code === "BTC" ? fmtBRLCompact.format(c.max) : c.max.toFixed(4)}</span>
+        </div>
+        <div class="barra-faixa-wrap">
+          <div class="barra-faixa-progresso ${isUp ? "barra-alta" : "barra-baixa"}" style="width: ${rangePercent}%;"></div>
+        </div>
+      </div>
+    `;
+
+    btn.addEventListener("click", () => {
+      estado.moedaGrafico = code;
+      renderizarCards();
+      carregarHistorico();
+    });
+
+    li.appendChild(btn);
+    el.cardsContainer.appendChild(li);
+  });
+}
+
+// ===== Limpeza de Estado do Gráfico (Prevenção de Dados Antigos em Falha) =====
+function limparGraficoETabela() {
+  if (el.chartLine) el.chartLine.setAttribute("d", "");
+  if (el.chartArea) el.chartArea.setAttribute("d", "");
+  if (el.chartGrid) el.chartGrid.innerHTML = "";
+  if (el.tableBody) el.tableBody.innerHTML = "";
+  if (el.metricMin) el.metricMin.textContent = "R$ --";
+  if (el.metricMax) el.metricMax.textContent = "R$ --";
+  if (el.metricAvg) el.metricAvg.textContent = "R$ --";
+  if (el.metricPoints) el.metricPoints.textContent = "-- dias";
+  if (el.chartPctBadge) {
+    el.chartPctBadge.textContent = "Sem dados";
+    el.chartPctBadge.className = "badge-periodo-pct font-mono-num";
+  }
+  if (el.chartResumoTexto) {
+    el.chartResumoTexto.textContent =
+      "Não foi possível carregar os dados deste histórico";
   }
 }
 
-// ===== Gráfico =====
-function limparGrafico() {
-  if (!estado.grafico) return;
-  estado.grafico.destroy();
-  estado.grafico = null;
-}
-
+// ===== Carregamento de Histórico Oficial =====
 async function carregarHistorico() {
   const id = ++estado.idHistorico;
-  // Guarda a escolha desta consulta, porque o estado pode mudar enquanto ela espera.
   const moeda = MOEDAS[estado.moedaGrafico];
   const dias = estado.dias;
-  limparGrafico();
-  limparTabelaGrafico();
-  el.resumo.textContent = "Carregando histórico...";
+
+  if (el.chartErrorState) el.chartErrorState.classList.add("escondido");
+  if (el.chartLoading) el.chartLoading.classList.remove("escondido");
+  if (el.chartTitle) {
+    el.chartTitle.textContent = `${moeda.nome} (${estado.moedaGrafico} / BRL)`;
+  }
+  if (el.chartSubtitle) {
+    el.chartSubtitle.textContent = `Histórico diário nos últimos ${dias} dias via AwesomeAPI`;
+  }
 
   try {
     const dados = await buscarJSON(`${API}/daily/${moeda.par}/${dias}`);
 
-    // Se o usuário trocou de moeda ou período nesse meio tempo, esta resposta é velha.
     if (id !== estado.idHistorico) return;
 
     if (!Array.isArray(dados)) {
-      throw new Error("Resposta do histórico em formato inesperado");
+      throw new Error("Formato inválido retornado para o histórico");
     }
 
-    // A API devolve do dia mais recente para o mais antigo, então invertemos.
-    // Pontos com data ou valor inválidos são descartados.
     const pontos = dados
       .map((d) => ({
-        data: new Date(Number(d && d.timestamp) * 1000),
-        valor: Number(d && d.bid),
+        data: new Date(Number(d.timestamp) * 1000),
+        valor: Number(d.bid),
       }))
       .filter((p) => Number.isFinite(p.data.getTime()) && precoValido(p.valor))
       .reverse();
 
     if (pontos.length < 2) {
-      limparGrafico();
-      el.resumo.textContent =
-        "Não há dados válidos suficientes para montar o gráfico.";
-      return;
+      throw new Error("Poucos dados históricos disponíveis para exibição");
     }
 
-    if (!desenharGrafico(pontos, moeda)) {
-      return;
-    }
-
-    renderizarTabelaGrafico(pontos);
-    const primeiro = pontos[0].valor;
-    const ultimo = pontos[pontos.length - 1].valor;
-    const variacao = ((ultimo - primeiro) / primeiro) * 100;
-    el.resumo.textContent =
-      `Nos últimos ${dias} dias, o ${moeda.apelido} foi de ${brl.format(primeiro)} ` +
-      `para ${brl.format(ultimo)} (${formatarPercentual(variacao)}).`;
+    desenharGraficoSVG(pontos);
   } catch (erro) {
     if (id !== estado.idHistorico) return;
-    console.error(erro);
-    limparGrafico();
-    limparTabelaGrafico();
-    el.resumo.textContent =
-      "Não foi possível carregar o histórico. Tente outro período ou atualize a página.";
+    console.error("Falha ao carregar histórico diário:", erro);
+    limparGraficoETabela();
+    if (el.chartErrorState) el.chartErrorState.classList.remove("escondido");
+  } finally {
+    if (id === estado.idHistorico && el.chartLoading) {
+      el.chartLoading.classList.add("escondido");
+    }
   }
 }
 
-function limparTabelaGrafico() {
-  el.corpoTabelaGrafico.replaceChildren();
-  el.dadosGrafico.hidden = true;
-}
+// ===== Renderizador de Gráfico SVG Nativo e Interativo =====
+function desenharGraficoSVG(pontos) {
+  const svg = el.chartSvg;
+  if (!svg) return;
 
-function renderizarTabelaGrafico(pontos) {
-  const linhas = pontos.map((ponto) => {
-    const linha = document.createElement("tr");
-    const data = document.createElement("th");
-    data.scope = "row";
-    data.textContent = new Intl.DateTimeFormat("pt-BR", {
-      dateStyle: "medium",
-    }).format(ponto.data);
-    const valor = document.createElement("td");
-    valor.textContent = brl.format(ponto.valor);
-    linha.append(data, valor);
-    return linha;
-  });
-
-  el.corpoTabelaGrafico.replaceChildren(...linhas);
-  el.dadosGrafico.hidden = false;
-}
-
-function desenharGrafico(pontos, moeda) {
-  if (typeof Chart === "undefined") {
-    el.resumo.textContent =
-      "A biblioteca do gráfico não carregou. Verifique sua conexão.";
-    return false;
-  }
-
-  const rotulos = pontos.map((p) =>
-    p.data.toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "2-digit",
-    }),
-  );
+  const width = 800;
+  const height = 300;
+  const padding = { top: 20, right: 30, bottom: 40, left: 60 };
 
   const valores = pontos.map((p) => p.valor);
+  const minVal = Math.min(...valores);
+  const maxVal = Math.max(...valores);
+  const valRange = maxVal - minVal || 1;
 
-  if (estado.grafico) {
-    estado.grafico.data.labels = rotulos;
-    estado.grafico.data.datasets[0].data = valores;
-    estado.grafico.data.datasets[0].label = moeda.nome;
-    estado.grafico.update();
-    return true;
+  const avgVal = valores.reduce((a, b) => a + b, 0) / valores.length;
+  const primeiro = pontos[0].valor;
+  const ultimo = pontos[pontos.length - 1].valor;
+  const periodDiff = ((ultimo - primeiro) / primeiro) * 100;
+  const isUp = periodDiff >= 0;
+
+  // Atualização das Métricas
+  const formatador =
+    estado.moedaGrafico === "BTC" ? fmtBRLCompact : fmtBRL;
+  if (el.metricMin) el.metricMin.textContent = formatador.format(minVal);
+  if (el.metricMax) el.metricMax.textContent = formatador.format(maxVal);
+  if (el.metricAvg) el.metricAvg.textContent = formatador.format(avgVal);
+  if (el.metricPoints) el.metricPoints.textContent = `${pontos.length} dias`;
+
+  if (el.chartPctBadge) {
+    el.chartPctBadge.textContent = `${isUp ? "+" : ""}${periodDiff.toFixed(2)}% no período`;
+    el.chartPctBadge.className = `badge-periodo-pct font-mono-num ${isUp ? "badge-alta" : "badge-baixa"}`;
   }
 
-  const canvas = document.getElementById("grafico");
-
-  if (!canvas) {
-    return false;
+  if (el.chartResumoTexto) {
+    el.chartResumoTexto.textContent = `Em ${estado.dias} dias: de ${formatador.format(primeiro)} para ${formatador.format(ultimo)}`;
   }
 
-  const ctx = canvas.getContext("2d");
+  const getX = (i) =>
+    padding.left +
+    (i / (pontos.length - 1)) * (width - padding.left - padding.right);
+  const getY = (val) =>
+    height -
+    padding.bottom -
+    ((val - minVal) / valRange) * (height - padding.top - padding.bottom);
 
-  estado.grafico = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: rotulos,
-      datasets: [
-        {
-          label: moeda.nome,
-          data: valores,
-          borderColor: "#1f5fd1",
-          backgroundColor: "rgba(31, 95, 209, 0.12)",
-          borderWidth: 2.5,
-          pointRadius: 0,
-          pointHoverRadius: 5,
-          tension: 0.25,
-          fill: true,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: {
-        mode: "index",
-        intersect: false,
-      },
-      plugins: {
-        legend: {
-          display: false,
-        },
-        tooltip: {
-          callbacks: {
-            label: (item) => " " + brl.format(item.parsed.y),
-          },
-        },
-      },
-      scales: {
-        x: {
-          ticks: {
-            maxTicksLimit: 6,
-          },
-          grid: {
-            display: false,
-          },
-        },
-        y: {
-          ticks: {
-            callback: (v) => brl.format(v),
-          },
-        },
-      },
-    },
-  });
+  // Grade SVG
+  let gridHtml = "";
+  const steps = 4;
+  for (let i = 0; i <= steps; i++) {
+    const y =
+      padding.top + (i / steps) * (height - padding.top - padding.bottom);
+    const refVal = maxVal - (i / steps) * valRange;
+    gridHtml += `
+      <line x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}" stroke="rgba(51, 65, 85, 0.4)" stroke-dasharray="3 3" />
+      <text x="${padding.left - 8}" y="${y + 4}" fill="#64748b" font-size="10" font-family="ui-monospace, monospace" text-anchor="end">${refVal.toFixed(estado.moedaGrafico === "BTC" ? 0 : 2)}</text>
+    `;
+  }
+  if (el.chartGrid) el.chartGrid.innerHTML = gridHtml;
 
-  return true;
+  // Curva Suave (Cubic Bezier)
+  let pathD = `M ${getX(0)} ${getY(pontos[0].valor)}`;
+  for (let i = 0; i < pontos.length - 1; i++) {
+    const x0 = getX(i);
+    const y0 = getY(pontos[i].valor);
+    const x1 = getX(i + 1);
+    const y1 = getY(pontos[i + 1].valor);
+    const cpX = x0 + (x1 - x0) / 2;
+    pathD += ` C ${cpX} ${y0}, ${cpX} ${y1}, ${x1} ${y1}`;
+  }
+
+  if (el.chartLine) {
+    el.chartLine.setAttribute("d", pathD);
+    el.chartLine.setAttribute("stroke", isUp ? "#f28c28" : "#f87171");
+  }
+
+  const areaD = `${pathD} L ${getX(pontos.length - 1)} ${height - padding.bottom} L ${getX(0)} ${height - padding.bottom} Z`;
+  if (el.chartArea) el.chartArea.setAttribute("d", areaD);
+
+  // Tabela Acessível
+  if (el.tableBody) {
+    el.tableBody.innerHTML = pontos
+      .slice()
+      .reverse()
+      .map((p, idx, arr) => {
+        const prev = arr[idx + 1] ? arr[idx + 1].valor : p.valor;
+        const dayPct = ((p.valor - prev) / prev) * 100;
+        const dayUp = dayPct >= 0;
+        return `
+          <tr>
+            <td>${p.data.toLocaleDateString("pt-BR")}</td>
+            <td class="font-mono-num font-semibold">${formatador.format(p.valor)}</td>
+            <td class="font-mono-num ${dayUp ? "badge-alta" : "badge-baixa"}" style="display: table-cell; border: none; padding: 0.5rem 0.75rem;">
+              ${dayUp ? "+" : ""}${dayPct.toFixed(2)}%
+            </td>
+          </tr>
+        `;
+      })
+      .join("");
+  }
+
+  // Interatividade do Tooltip e Mira
+  if (el.chartWrapper) {
+    el.chartWrapper.onmousemove = (e) => {
+      const rect = svg.getBoundingClientRect();
+      const mouseX = ((e.clientX - rect.left) / rect.width) * width;
+
+      if (mouseX < padding.left || mouseX > width - padding.right) {
+        if (el.chartCrosshair) el.chartCrosshair.classList.add("escondido");
+        if (el.chartTooltip) el.chartTooltip.style.opacity = "0";
+        return;
+      }
+
+      const rawIndex =
+        ((mouseX - padding.left) / (width - padding.left - padding.right)) *
+        (pontos.length - 1);
+      const index = Math.min(
+        Math.max(Math.round(rawIndex), 0),
+        pontos.length - 1
+      );
+      const p = pontos[index];
+
+      const px = getX(index);
+      const py = getY(p.valor);
+
+      if (el.chartCrosshair) {
+        el.chartCrosshair.classList.remove("escondido");
+        if (el.crosshairX) {
+          el.crosshairX.setAttribute("x1", px);
+          el.crosshairX.setAttribute("x2", px);
+          el.crosshairX.setAttribute("y1", padding.top);
+          el.crosshairX.setAttribute("y2", height - padding.bottom);
+        }
+        if (el.crosshairDot) {
+          el.crosshairDot.setAttribute("cx", px);
+          el.crosshairDot.setAttribute("cy", py);
+        }
+      }
+
+      if (el.chartTooltip) {
+        el.chartTooltip.style.opacity = "1";
+        el.chartTooltip.style.left = `${(px / width) * 100}%`;
+        el.chartTooltip.style.top = `${(py / height) * 100}%`;
+
+        if (el.tooltipDate) {
+          el.tooltipDate.textContent = p.data.toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          });
+        }
+        if (el.tooltipVal) {
+          el.tooltipVal.textContent = formatador.format(p.valor);
+        }
+        if (el.tooltipDiff) {
+          const diffFromStart = ((p.valor - primeiro) / primeiro) * 100;
+          el.tooltipDiff.textContent = `${diffFromStart >= 0 ? "+" : ""}${diffFromStart.toFixed(2)}% no período`;
+          el.tooltipDiff.className = `tooltip-variacao ${diffFromStart >= 0 ? "badge-alta" : "badge-baixa"}`;
+        }
+      }
+    };
+
+    el.chartWrapper.onmouseleave = () => {
+      if (el.chartCrosshair) el.chartCrosshair.classList.add("escondido");
+      if (el.chartTooltip) el.chartTooltip.style.opacity = "0";
+    };
+  }
 }
 
-// ===== Conversor =====
+// ===== Conversor de Moedas =====
 function taxaEmReais(sigla) {
   if (sigla === "BRL") return 1;
   return estado.cotacoes[sigla]?.valor;
 }
 
 function converter() {
-  const quantidade = parseFloat(el.valor.value);
-  const de = el.de.value;
-  const para = el.para.value;
+  if (!el.convAmount || !el.convFrom || !el.convTo || !el.convResultBox) return;
+
+  const quantidade = parseFloat(el.convAmount.value);
+  const de = el.convFrom.value;
+  const para = el.convTo.value;
 
   if (!Number.isFinite(quantidade) || quantidade < 0) {
-    el.resultado.textContent = "Digite um valor válido.";
+    el.convResultBox.textContent = "Digite um valor válido";
     return;
   }
 
   const taxaDe = taxaEmReais(de);
   const taxaPara = taxaEmReais(para);
+
   if (!taxaDe || !taxaPara) {
-    el.resultado.textContent = "Aguardando cotações...";
+    el.convResultBox.textContent = "Aguardando cotações...";
     return;
   }
 
-  // Passa tudo para reais e depois para a moeda de destino.
   const resultado = (quantidade * taxaDe) / taxaPara;
-  if (!Number.isFinite(resultado)) {
-    el.resultado.textContent =
-      "O resultado é muito grande para ser calculado com segurança.";
-    return;
+  el.convResultBox.textContent = formatarMoeda(resultado, para);
+
+  const taxaDireta = taxaDe / taxaPara;
+  const taxaInversa = 1 / taxaDireta;
+
+  if (el.rateDirect) {
+    el.rateDirect.textContent = `1 ${de} = ${taxaDireta < 0.01 ? taxaDireta.toFixed(6) : taxaDireta.toFixed(4)} ${para}`;
   }
-  let texto = `${formatarMoeda(quantidade, de)} = ${formatarMoeda(resultado, para)}`;
+  if (el.rateInverse) {
+    el.rateInverse.textContent = `1 ${para} = ${taxaInversa < 0.01 ? taxaInversa.toFixed(6) : taxaInversa.toFixed(4)} ${de}`;
+  }
 
-  // Avisa quando alguma das cotações usadas está velha.
   const velha = [de, para].some(
-    (s) => s !== "BRL" && estado.cotacoes[s]?.desatualizada,
+    (s) => s !== "BRL" && estado.cotacoes[s]?.desatualizada
   );
-  if (velha) texto += " (cotação desatualizada)";
-
-  el.resultado.textContent = texto;
+  if (el.statusCotacaoVelha) {
+    if (velha) {
+      el.statusCotacaoVelha.textContent = "Atenção: cotação desatualizada";
+      el.statusCotacaoVelha.className = "status-cotacao-alerta";
+    } else {
+      el.statusCotacaoVelha.textContent = "Cotação ativa e verificada";
+      el.statusCotacaoVelha.className = "status-cotacao-ativa";
+    }
+  }
 }
 
-// ===== Eventos =====
-el.btnAtualizar.addEventListener("click", () => {
-  carregarCotacoes();
-  carregarHistorico();
-});
+// ===== Event Listeners =====
+if (el.convAmount) el.convAmount.addEventListener("input", converter);
+if (el.convFrom) el.convFrom.addEventListener("change", converter);
+if (el.convTo) el.convTo.addEventListener("change", converter);
 
-// Um único listener na lista, em vez de um por botão (delegação de eventos).
-el.lista.addEventListener("click", (evento) => {
-  const botao = evento.target.closest(".moeda");
-  if (!botao) return;
-  estado.moedaGrafico = botao.dataset.sigla;
-  renderizarLista();
-  carregarHistorico();
-});
+if (el.btnSwap) {
+  el.btnSwap.addEventListener("click", () => {
+    const temp = el.convFrom.value;
+    el.convFrom.value = el.convTo.value;
+    el.convTo.value = temp;
 
-el.periodos.forEach((botao) => {
-  botao.addEventListener("click", () => {
-    estado.dias = Number(botao.dataset.dias);
-    el.periodos.forEach((b) =>
-      b.setAttribute("aria-pressed", String(b === botao)),
-    );
-    carregarHistorico();
+    if (el.iconSwapSvg) {
+      el.iconSwapSvg.classList.add("girar-180");
+      setTimeout(() => el.iconSwapSvg.classList.remove("girar-180"), 300);
+    }
+    converter();
+  });
+}
+
+document.querySelectorAll(".btn-preset").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    if (el.convAmount) {
+      el.convAmount.value = btn.dataset.val;
+      converter();
+    }
   });
 });
 
-el.form.addEventListener("submit", (e) => e.preventDefault());
-el.form.addEventListener("input", converter);
+if (el.periodBtns) {
+  el.periodBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      el.periodBtns.forEach((b) => b.setAttribute("aria-pressed", "false"));
+      btn.setAttribute("aria-pressed", "true");
+      estado.dias = parseInt(btn.dataset.dias, 10);
+      carregarHistorico();
+    });
+  });
+}
 
-el.inverter.addEventListener("click", () => {
-  [el.de.value, el.para.value] = [el.para.value, el.de.value];
-  converter();
-});
+if (el.toggleTableBtn && el.tableContainer) {
+  el.toggleTableBtn.addEventListener("click", () => {
+    const hidden = el.tableContainer.classList.toggle("escondido");
+    el.toggleTableBtn.setAttribute("aria-expanded", String(!hidden));
+    if (el.tableArrow) {
+      el.tableArrow.classList.toggle("girar-180", !hidden);
+    }
+  });
+}
 
-// ===== Início =====
+if (el.quickResetUsd) {
+  el.quickResetUsd.addEventListener("click", () => {
+    estado.moedaGrafico = "USD";
+    renderizarCards();
+    carregarHistorico();
+  });
+}
+
+if (el.btnSync) {
+  el.btnSync.addEventListener("click", () => {
+    carregarCotacoes();
+    carregarHistorico();
+  });
+}
+
+if (el.btnReintentar) {
+  el.btnReintentar.addEventListener("click", () => {
+    carregarCotacoes();
+    carregarHistorico();
+  });
+}
+
+if (el.btnRetryChart) {
+  el.btnRetryChart.addEventListener("click", () => {
+    carregarHistorico();
+  });
+}
+
+// ===== Inicialização =====
+renderizarSkeletons();
 carregarCotacoes();
 carregarHistorico();
 setInterval(carregarCotacoes, INTERVALO_ATUALIZACAO);
