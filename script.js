@@ -469,7 +469,7 @@ function desenharGraficoSVG(pontos) {
           <tr>
             <td>${p.data.toLocaleDateString("pt-BR")}</td>
             <td class="font-mono-num font-semibold">${formatador.format(p.valor)}</td>
-            <td class="font-mono-num ${dayUp ? "badge-alta" : "badge-baixa"}" style="display: table-cell; border: none; padding: 0.5rem 0.75rem;">
+            <td class="font-mono-num ${dayUp ? "badge-alta" : "badge-baixa"}">
               ${dayUp ? "+" : ""}${dayPct.toFixed(2)}%
             </td>
           </tr>
@@ -486,7 +486,7 @@ function desenharGraficoSVG(pontos) {
 
       if (mouseX < padding.left || mouseX > width - padding.right) {
         if (el.chartCrosshair) el.chartCrosshair.classList.add("escondido");
-        if (el.chartTooltip) el.chartTooltip.style.opacity = "0";
+        if (el.chartTooltip) el.chartTooltip.classList.remove("visivel");
         return;
       }
 
@@ -517,9 +517,7 @@ function desenharGraficoSVG(pontos) {
       }
 
       if (el.chartTooltip) {
-        el.chartTooltip.style.opacity = "1";
-        el.chartTooltip.style.left = `${(px / width) * 100}%`;
-        el.chartTooltip.style.top = `${(py / height) * 100}%`;
+        el.chartTooltip.classList.add("visivel");
 
         if (el.tooltipDate) {
           el.tooltipDate.textContent = p.data.toLocaleDateString("pt-BR", {
@@ -541,7 +539,7 @@ function desenharGraficoSVG(pontos) {
 
     el.chartWrapper.onmouseleave = () => {
       if (el.chartCrosshair) el.chartCrosshair.classList.add("escondido");
-      if (el.chartTooltip) el.chartTooltip.style.opacity = "0";
+      if (el.chartTooltip) el.chartTooltip.classList.remove("visivel");
     };
   }
 }
