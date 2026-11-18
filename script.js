@@ -11,6 +11,12 @@ const MOEDAS = {
     apelido: "dólar",
   },
   EUR: { nome: "Euro", par: "EUR-BRL", chave: "EURBRL", apelido: "euro" },
+  GBP: {
+    nome: "Libra esterlina",
+    par: "GBP-BRL",
+    chave: "GBPBRL",
+    apelido: "libra",
+  },
   BTC: { nome: "Bitcoin", par: "BTC-BRL", chave: "BTCBRL", apelido: "bitcoin" },
 };
 
