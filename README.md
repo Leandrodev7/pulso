@@ -1,4 +1,6 @@
-# Pulso — O Mercado em Movimento
+# Pulso
+
+Desenvolvido por Leandro Dev7.
 
 Painel web para acompanhar cotações do dólar, euro e Bitcoin em reais. A interface reúne valores atuais em tempo real, histórico gráfico vetorial e conversão de moedas executada diretamente no navegador.
 

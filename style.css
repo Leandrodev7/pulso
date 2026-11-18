@@ -1,5 +1,5 @@
 /* ==========================================================================
-   PULSO — O Mercado em Movimento
+   PULSO
    Folha de Estilos Principal (100% CSS Nativo, Sem Dependências Externas)
    Compatível com CSP Restritiva (sem CDNs, sem fontes externas, modo escuro)
    ========================================================================== */
@@ -15,7 +15,7 @@
   --bg-card-hover: #192a4d;
   --bg-card-selected: #14213d;
 
-  /* Cor da Marca — Laranja Pulso Vibrante */
+  /* Cor da marca — laranja Pulso */
   --laranja-brand: #f28c28;
   --laranja-hover: #fa9d43;
   --laranja-subtle: rgba(242, 140, 40, 0.12);
@@ -131,7 +131,7 @@ button, input, select {
 }
 
 /* ==========================================================================
-   Cabeçalho Principal e Identidade Pulso
+   Cabeçalho principal e identidade Pulso
    ========================================================================== */
 .header-topo {
   position: sticky;
@@ -1486,29 +1486,12 @@ button, input, select {
   margin-bottom: 1.5rem;
 }
 
-.sobretitulo,
 .rotulo-secao {
   color: var(--texto-suave);
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-
-.sobretitulo span {
-  color: var(--laranja-brand);
-}
-
-.abertura h1 {
-  margin-top: 0.35rem;
-  font-size: clamp(1.8rem, 3vw, 2.5rem);
-  letter-spacing: -0.04em;
-  line-height: 1.1;
-}
-
-.abertura-descricao {
-  margin-top: 0.5rem;
-  color: var(--texto-secundario);
 }
 
 .fonte-dados {

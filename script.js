@@ -1,6 +1,6 @@
 /**
  * ==========================================================================
- * PULSO — O Mercado em Movimento
+ * PULSO
  * Lógica Principal da Aplicação (100% Vanilla JS, Zero Dados Fictícios)
  * Integração com AwesomeAPI, Renderização SVG e Conversor Client-Side
  * ==========================================================================
