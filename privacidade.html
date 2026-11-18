@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="dark" />
     <meta name="referrer" content="no-referrer" />
     <meta
       http-equiv="Content-Security-Policy"
@@ -11,90 +11,79 @@
     />
     <meta
       name="description"
-      content="Informações de privacidade do MarketPulse: dados processados pelo site e serviços externos utilizados."
+      content="Informações de privacidade do Pulso — O Mercado em Movimento: dados processados pelo site e serviços externos utilizados."
     />
-    <title>Privacidade e LGPD | MarketPulse</title>
+    <meta name="theme-color" content="#0b1329" />
+    <title>Privacidade e LGPD | Pulso</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%2314213d'/%3E%3Cpath d='M8 25l8-8 6 5 10-11' fill='none' stroke='%23f28c28' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
+    />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <header class="topo">
-      <div>
-        <p class="sobretitulo">Transparência</p>
-        <h1>Privacidade</h1>
+    <header class="header-topo">
+      <div class="header-container">
+        <a href="index.html" class="marca-bloco">
+          <div class="marca-icone" aria-hidden="true">
+            <svg viewBox="0 0 40 40" fill="none">
+              <path d="M8 25l8-8 6 5 10-11" fill="none" stroke="#f28c28" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </div>
+          <div class="marca-titulos">
+            <div class="marca-linha">
+              <span class="marca-nome">Pulso</span>
+              <span class="badge-tag">Transparência</span>
+            </div>
+            <p class="marca-subtitulo">Privacidade e LGPD</p>
+          </div>
+        </a>
+        <a class="btn" href="index.html">← Voltar ao Pulso</a>
       </div>
-      <a class="btn btn-claro voltar" href="index.html">Voltar ao MarketPulse</a>
     </header>
 
     <main class="conteudo-privacidade">
       <section class="painel" aria-labelledby="responsavel">
-        <h2 id="responsavel">Responsável e contato</h2>
+        <h1 id="responsavel">Privacidade e LGPD</h1>
         <p class="pendencia-privacidade">
-          Antes de publicar o site, a pessoa ou organização que decidir sua
-          operação deve preencher sua identificação e um canal de contato para
-          privacidade. Essa informação ainda não foi fornecida; portanto, esta
-          página é uma minuta e não deve ser apresentada como política final.
+          <strong>Aviso pré-publicação:</strong> Antes de disponibilizar o site publicamente, a pessoa ou organização responsável pela sua operação deve preencher sua identificação oficial e um canal de contato para solicitações de privacidade. Esta página é uma minuta informativa e não substitui a governança legal definitiva.
         </p>
 
         <h2>O que este site faz</h2>
         <p>
-          O MarketPulse é um painel estático. Não oferece contas, cadastro,
-          comentários ou formulários. O valor informado no conversor e as
-          escolhas de moeda são processados no próprio navegador e não são
-          enviados pela aplicação aos provedores de cotação.
+          O <strong>Pulso — O Mercado em Movimento</strong> é um painel estático informativo. Não oferece contas de usuário, cadastro, comentários ou formulários com envio a servidores. O valor digitado no conversor de moedas e as opções selecionadas são processados exclusivamente no navegador do usuário via JavaScript client-side e nunca são enviados a provedores de dados ou servidores externos.
         </p>
         <p>
-          A aplicação não cria perfil de usuário, não usa ferramenta de
-          publicidade ou análise e não grava esses valores em cookies,
-          armazenamento local ou sessão do navegador.
+          A aplicação não cria perfis de usuário, não utiliza ferramentas de publicidade direcionada ou rastreamento analítico invasivo, e não grava valores do conversor em cookies, localStorage ou IndexedDB.
         </p>
 
         <h2>Serviços externos e dados técnicos</h2>
         <p>
-          Para funcionar, o navegador solicita cotações à
-          <a href="https://docs.awesomeapi.com.br/">AwesomeAPI</a> e carrega a
-          biblioteca de gráficos Chart.js pelo
-          <a href="https://cdnjs.com/">cdnjs</a>. Após a publicação, os arquivos
-          do site serão servidos pelo Cloudflare Pages.
+          Para apresentar os dados de mercado, o navegador realiza requisições HTTPS à <a href="https://docs.awesomeapi.com.br/" target="_blank" rel="noopener">AwesomeAPI</a> para obter cotações públicas de câmbio. O gráfico de histórico é desenhado em formato vetorial nativo (SVG) pelo próprio navegador.
         </p>
         <p>
-          Esses serviços recebem conexões de rede necessárias para entregar o
-          conteúdo e podem tratar dados técnicos como endereço IP, data e hora
-          da solicitação, navegador e recurso solicitado. A hospedagem e os
-          provedores externos podem manter registros conforme suas próprias
-          configurações, termos e políticas. O operador do MarketPulse não
-          controla os prazos ou tratamentos independentes desses provedores.
-          Consulte as
-          <a href="https://www.cloudflare.com/privacypolicy/"
-            >informações de privacidade da Cloudflare</a
-          >
-          e os materiais de cada serviço.
+          Ao acessar o site hospedado (por exemplo, via Cloudflare Pages), a infraestrutura de rede recebe dados técnicos inerentes ao protocolo HTTP/HTTPS, tais como endereço IP, navegador utilizado, data e hora da solicitação. Cada provedor trata esses registros técnicos conforme suas respectivas políticas de privacidade. O operador do Pulso não armazena nem comercializa esses registros.
         </p>
         <p>
-          As consultas de cotação contêm os pares de moedas pedidos. O conteúdo
-          digitado no conversor não faz parte dessas consultas. A aplicação não
-          define nem garante a base legal ou os prazos de retenção aplicados por
-          terceiros; o responsável pela publicação deve verificá-los antes do
-          lançamento.
+          As consultas de cotação transmitidas à API contêm somente a identificação dos pares de moedas (ex.: USD-BRL, EUR-BRL, BTC-BRL).
         </p>
 
-        <h2>Seus direitos</h2>
+        <h2>Seus direitos sob a LGPD</h2>
         <p>
-          Nos termos da LGPD, uma pessoa pode solicitar ao responsável
-          informações sobre o tratamento de seus dados e exercer os direitos
-          aplicáveis, como confirmação de tratamento, acesso, correção,
-          eliminação ou oposição, observadas as condições legais. Como o canal
-          de contato ainda está pendente, ele precisa ser publicado aqui antes
-          de aceitar solicitações ou divulgar este site como finalizado.
+          Em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018 — LGPD), os titulares de dados pessoais podem exercer direitos de confirmação, acesso, correção ou eliminação perante o controlador do tratamento. Quando os canais de contato institucionais forem publicados, as solicitações poderão ser encaminhadas diretamente por eles.
         </p>
 
-        <h2>Cotações e finalidade informativa</h2>
+        <h2>Finalidade informativa</h2>
         <p>
-          As cotações vêm da AwesomeAPI, podem atrasar e não constituem
-          recomendação financeira. A aplicação sinaliza cotações com mais de 1
-          hora ou sem horário confirmado, mas essa verificação não garante
-          atualidade ou precisão dos dados.
+          As cotações exibidas possuem finalidade exclusivamente jornalística e informativa, sujeitas a variações e eventuais atrasos da API fornecedora. Não representam recomendação ou conselho para tomada de decisões financeiras ou de investimento.
         </p>
       </section>
     </main>
+
+    <footer class="rodape">
+      <div class="rodape-container">
+        <p>© Pulso — O Mercado em Movimento. Todos os direitos reservados.</p>
+      </div>
+    </footer>
   </body>
 </html>

@@ -384,6 +384,10 @@ h2 {
   content: "€";
 }
 
+.moeda[data-sigla="GBP"]::before {
+  content: "£";
+}
+
 .moeda[data-sigla="BTC"]::before {
   content: "₿";
 }
@@ -513,6 +517,49 @@ h2 {
   min-width: 0;
   height: 20rem;
   margin-top: 1rem;
+}
+
+.grafico-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.escondido {
+  display: none !important;
+}
+
+.chart-tooltip {
+  position: absolute;
+  z-index: 1;
+  min-width: 8rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--borda);
+  border-radius: 9px;
+  background: rgba(16, 24, 39, 0.96);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  color: var(--texto);
+  font-size: 0.72rem;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 0.55rem));
+  transition: opacity 100ms ease;
+}
+
+.tooltip-data {
+  color: var(--texto-secundario);
+}
+
+.tooltip-valor {
+  margin-top: 0.15rem;
+  font-weight: 720;
+}
+
+.tooltip-variacao {
+  margin-top: 0.1rem;
+  color: var(--texto-secundario);
+  font-size: 0.66rem;
 }
 
 .resumo {
@@ -664,6 +711,18 @@ h2 {
   background: rgba(241, 125, 114, 0.08);
   color: #ffaaa1;
   font-size: 0.77rem;
+}
+
+.erro button {
+  margin-left: 0.35rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #ffbd78;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
 }
 
 .rodape {
